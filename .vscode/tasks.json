@@ -1,0 +1,22 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build OVMF",
+            "type": "shell",
+            "group": "build",
+            "problemMatcher":"$gcc",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "${workspaceFolder}/build-ovmf.sh",
+        }
+    ]
+}
