@@ -1,0 +1,73 @@
+The OVMF_CODE*.fd files provide UEFI firmware for a QEMU guest that is
+intended to be read-only. The OVMF_VARS*.fd files provide UEFI variable
+template images which are intended to be read-write, and therefore each
+guest should be given its own copy. Here's an overview of each of them:
+
+OVMF_CODE_4M.fd
+  Use this for booting guests in non-Secure Boot mode. While this image
+  technically supports Secure Boot, it does so without requiring SMM
+  support from QEMU, so it is less secure. Use the OVMF_VARS.fd template
+  with this.
+
+OVMF_CODE_4M.ms.fd
+  This is a symlink to OVMF_CODE_4M.secboot.fd. It is useful in the context
+  of libvirt because the included JSON firmware descriptors will tell libvirt
+  to pair OVMF_VARS.ms.fd with it, which has Secure Boot pre-enabled.
+
+OVMF_CODE_4M.secboot.fd
+  Like OVMF_CODE_4M.fd, but will abort if QEMU does not support SMM.
+  Use this for guests for which you may enable Secure Boot. Be aware
+  that the included JSON firmware descriptors associate this with
+  OVMF_CODE_4M.fd. Which means, if you specify this image in libvirt, you'll
+  get a guest that is Secure Boot-*capable*, but has Secure Boot disabled.
+  To enable it, you'll need to manually import PK/KEK/DB keys and activate
+  Secure Boot from the UEFI setup menu. If you want Secure Boot active from
+  the start, consider using OVMF_CODE.ms.fd instead.
+
+OVMF_VARS_4M.fd
+  This is an empty variable store template, which means it has no
+  built-in Secure Boot keys and Secure Boot is disabled. You can use
+  it with any OVMF_CODE image, but keep in mind that if you want to
+  boot in Secure Boot mode, you will have to enable it manually.
+
+OVMF_VARS_4M.ms.fd
+  This template has distribution-specific PK and KEK1 keys, and
+  the default Microsoft keys in KEK/DB. It also has Secure Boot
+  already activated. Using this with OVMF_CODE.ms.fd will boot a
+  guest directly in Secure Boot mode.
+
+OVMF_CODE.fd
+OVMF_CODE.ms.fd
+OVMF_CODE.secboot.fd
+OVMF_VARS.fd
+OVMF_VARS.ms.fd
+  These images are the same as their "4M" variants, but for use with guests
+  using a 2MB flash device. 2MB flash is no longer considered sufficient for
+  use with Secure Boot. This is provided only for backwards compatibility.
+
+OVMF.fd
+  This is a unified image that includes the contents of both OVMF_CODE.fd
+  and OVMF_VARS.fd. If VMs need to update their variables, they will
+  need to have their own writeable copy of this image. A downside of this
+  is that the OVMF_CODE content in those images will not automatically
+  benefit from updates to the ovmf package, as would be the case for VMs
+  that use the system OVMF_CODE.fd image and their own writeable
+  OVMF_VARS.fd image. These unified images are provided for backwards
+  compatibility only. New unified images are not being provided for
+  additional variants (4M, secboot, etc).
+
+OVMF_CODE_4M.snakeoil.fd
+OVMF_VARS_4M.snakeoil.fd
+  This image is **for testing purposes only**. It includes an insecure
+  "snakeoil" key in PK, KEK & DB. The private key and cert are also
+  shipped in this package as well, so that testers can easily sign
+  binaries that will be considered valid.
+
+PkKek-1-snakeoil.key
+PkKek-1-snakeoil.pem
+  The private key and certificate for the snakeoil key. Use these
+  to sign binaries that can be verified by the key in the
+  OVMF_VARS.snakeoil.fd template. The password for the key is
+  'snakeoil'.
+
+ -- dann frazier <dannf@debian.org>, Fri,  4 Feb 2022 17:08:07 -0700

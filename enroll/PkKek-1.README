@@ -1,0 +1,35 @@
+Background on these keys is described below:
+
+On 09/30/14 20:00, Peter Jones wrote:
+> We should generate a special key that's not in our normal signing chains
+> for PK and KEK.  The reason for this is that [in practice] PK gets
+> treated as part of DB (*).
+>
+> [Shipping a key in our normal signing chains] as PK means you can run
+> grub directly, in which case it won't have access to the shim protocol.
+> When grub is run without the shim protocol registered, it assumes SB is
+> disabled and boots without verifying the kernel.  We don't want that to
+> be a thing you can do, but allowing that is the inevitable result of
+> shipping with any of our normal signing chain in PK or KEK.
+>
+> (* USRT has actually agreed that since you can escalate to this behavior
+> if you have the secret half of a key in KEK or PK anyway, and many
+> vendors had already shipped it this way, that it is fine and I think
+> even *expected* at this point, even though it wasn't formally in the
+> UEFI 2.3.1 Spec that introduced Secure Boot.  I'll try and make sure the
+> language reflects that in an upcoming spec revision.)
+>
+> So let me get SRT to issue a special key to use for PK and KEK.  We can
+> use it just for those operations, and make sure it's protected with the
+> same processes and controls as our other signing keys.
+
+---
+
+We include Debian and Ubuntu keys generated in this manner - i.e.,
+not in our normal signing chains, and where the public key was not saved.
+The Debian key was generated using the following command, taken from
+commit be9470b3c9 "OvmfPkg/EnrollDefaultKeys: enroll PK/KEK1 from the Type
+11 SMBIOS table":
+
+openssl req -x509 -newkey rsa:2048 -outform PEM \
+            -keyout /dev/null -out PkKek1.pem

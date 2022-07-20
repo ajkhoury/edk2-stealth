@@ -1,0 +1,115 @@
+#!/usr/bin/make -f
+
+SHELL=/bin/bash
+
+BUILD_ARCH = amd64
+
+EDK2_TOOLCHAIN = GCC5
+export $(EDK2_TOOLCHAIN)_AARCH64_PREFIX=aarch64-linux-gnu-
+export $(EDK2_TOOLCHAIN)_ARM_PREFIX=arm-linux-gnueabi-
+
+export PYTHON3_ENABLE=TRUE
+
+ifeq ($(BUILD_ARCH),amd64)
+	EDK2_BUILD_ARCH=X64
+endif
+ifeq ($(BUILD_ARCH),i386)
+	EDK2_BUILD_ARCH=IA32
+endif
+ifeq ($(BUILD_ARCH),arm64)
+	EDK2_BUILD_ARCH=AARCH64
+endif
+
+COMMON_FLAGS  = -DNETWORK_HTTP_BOOT_ENABLE=TRUE
+COMMON_FLAGS += -DNETWORK_IP6_ENABLE=TRUE
+COMMON_FLAGS += -DNETWORK_TLS_ENABLE
+COMMON_FLAGS += -DSECURE_BOOT_ENABLE=TRUE
+COMMON_FLAGS += -DTPM2_ENABLE=TRUE
+OVMF_COMMON_FLAGS = $(COMMON_FLAGS)
+OVMF_SMM_FLAGS = $(OVMF_COMMON_FLAGS) -DSMM_REQUIRE=TRUE
+OVMF_2M_FLAGS = $(OVMF_COMMON_FLAGS) -DFD_SIZE_2MB
+OVMF_4M_FLAGS = $(OVMF_COMMON_FLAGS) -DFD_SIZE_4MB
+OVMF_2M_SMM_FLAGS = $(OVMF_2M_FLAGS) -DSMM_REQUIRE=TRUE
+OVMF_4M_SMM_FLAGS = $(OVMF_4M_FLAGS) -DSMM_REQUIRE=TRUE
+OVMF32_4M_FLAGS = $(OVMF_COMMON_FLAGS) -DSMM_REQUIRE=TRUE
+OVMF32_4M_SMM_FLAGS =  $(OVMF32_4M_FLAGS) -DSMM_REQUIRE=TRUE
+
+AAVMF_FLAGS  = $(COMMON_FLAGS) -DTPM2_CONFIG_ENABLE=TRUE
+
+# Clear variables used internally by the edk2 build system
+undefine WORKSPACE
+undefine ECP_SOURCE
+undefine EDK_SOURCE
+undefine EFI_SOURCE
+undefine EDK_TOOLS_PATH
+undefine CONF_PATH
+
+build: build-ovmf
+	cp enroll/ovmf-install/OVMF_CODE.secboot.fd /media/owner/Data/VirtualMachines/Qemu/OVMF_CODE.secboot.fd
+	cp enroll/ovmf-install/OVMF_VARS.ms.fd /media/owner/Data/VirtualMachines/Qemu/OVMF_VARS.ms.fd
+	cp enroll/ovmf-install/OVMF_VARS.snakeoil.fd /media/owner/Data/VirtualMachines/Qemu/OVMF_VARS.snakeoil.fd
+
+enroll/setup-build-stamp:
+	set -e; . ./edksetup.sh; \
+	make -C BaseTools ARCH=$(EDK2_BUILD_ARCH)
+	touch $@
+
+OVMF_BUILD_DIR = Build/OvmfX64/DEBUG_$(EDK2_TOOLCHAIN)
+OVMF3264_BUILD_DIR = Build/Ovmf3264/DEBUG_$(EDK2_TOOLCHAIN)
+OVMF_ENROLL = $(OVMF_BUILD_DIR)/X64/EnrollDefaultKeys.efi
+OVMF_SHELL =  $(OVMF_BUILD_DIR)/X64/Shell.efi
+OVMF_BINARIES = $(OVMF_ENROLL) $(OVMF_SHELL)
+OVMF_IMAGES := $(addprefix enroll/ovmf-install/,OVMF_CODE.secboot.fd OVMF_VARS.fd)
+OVMF_PREENROLLED_VARS := $(addprefix enroll/ovmf-install/,OVMF_VARS.ms.fd OVMF_VARS.snakeoil.fd)
+
+build-ovmf: $(OVMF_BINARIES) $(OVMF_IMAGES) $(OVMF_PREENROLLED_VARS)
+$(OVMF_BINARIES) $(OVMF_IMAGES): enroll/setup-build-stamp
+	rm -rf enroll/ovmf-install
+	mkdir enroll/ovmf-install
+	set -e; . ./edksetup.sh; \
+		build -a X64 \
+			-t $(EDK2_TOOLCHAIN) \
+			-p OvmfPkg/OvmfPkgX64.dsc \
+			$(OVMF_4M_SMM_FLAGS) -b DEBUG \
+			--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId="ALASKA" \
+			--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId=0x00002049204D2041 \
+			--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=L"AMI" \
+			--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId=0x20494D41
+	cp $(OVMF_BUILD_DIR)/FV/OVMF_CODE.fd \
+		enroll/ovmf-install/OVMF_CODE.secboot.fd
+	cp $(OVMF_BUILD_DIR)/FV/OVMF_VARS.fd \
+		enroll/ovmf-install/OVMF_VARS.fd
+
+
+ifeq ($(call dpkg_vendor_derives_from_v1,ubuntu),yes)
+enroll/PkKek-1-vendor.pem: enroll/PkKek-1-Ubuntu.pem
+else
+enroll/PkKek-1-vendor.pem: enroll/PkKek-1-Debian.pem
+endif
+	ln -sf `basename $<` $@
+
+enroll/oem-string-%: enroll/PkKek-1-%.pem
+	tr -d '\n' < $< | sed -e 's/.*-----BEGIN CERTIFICATE-----/4e32566d-8e9e-4f52-81d3-5bb9715f9727:/' -e 's/-----END CERTIFICATE-----//' > $@
+
+%/OVMF_VARS.ms.fd: %/OVMF_CODE.secboot.fd %/OVMF_VARS.fd enroll/oem-string-vendor $(OVMF_ENROLL) $(OVMF_SHELL)
+	PYTHONPATH=$(CURDIR)/enroll/python \
+	./enroll/edk2-vars-generator.py \
+		-f OVMF_4M -e $(OVMF_ENROLL) -s $(OVMF_SHELL) \
+		-c enroll/ovmf-install/OVMF_CODE.secboot.fd \
+		-V enroll/ovmf-install/OVMF_VARS.fd \
+		-C `< enroll/oem-string-vendor` -o $@
+
+%/OVMF_VARS.snakeoil.fd: %/OVMF_CODE.secboot.fd %/OVMF_VARS.fd enroll/oem-string-snakeoil $(OVMF_ENROLL) $(OVMF_SHELL)
+	PYTHONPATH=$(CURDIR)/enroll/python \
+	./enroll/edk2-vars-generator.py \
+		-f OVMF -e $(OVMF_ENROLL) -s $(OVMF_SHELL) \
+		-c enroll/ovmf-install/OVMF_CODE.secboot.fd \
+		-V enroll/ovmf-install/OVMF_VARS.fd \
+		-C `< enroll/oem-string-snakeoil` -o $@
+
+clean:
+	-. ./edksetup.sh; build clean
+	make -C BaseTools clean
+	rm -f ./enroll/setup-build-stamp
+
+.PHONY: build-ovmf
