@@ -1,0 +1,3 @@
+no-stack-protector-all-archs.diff
+brotlicompress-disable.diff
+x64-baseline-abi.patch

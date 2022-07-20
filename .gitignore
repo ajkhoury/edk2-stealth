@@ -5,3 +5,5 @@ Build/
 __pycache__/
 tags/
 .vscode/
+enroll/ovmf-install/
+enroll/setup-build-stamp
