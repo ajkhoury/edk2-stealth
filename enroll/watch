@@ -1,0 +1,8 @@
+# Currently only useful for checking for a new release. There's additional
+# upstream tarball mangling required via ./enroll/rules get-orig-source.
+# Also - doesn't check for new qemu-ovmf-secureboot releases.
+version=4
+opts="filenamemangle=s/.+\/edk2-stable(\d{6})\.tar\.gz/edk2-0.0~$1.tar.gz/, \
+      uversionmangle=s/(\d{6})/0.0~$1/" \
+     https://github.com/tianocore/edk2/tags \
+     .*/edk2-stable(\d{6})\.tar\.gz debian uupdate
