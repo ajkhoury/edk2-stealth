@@ -1878,7 +1878,7 @@
 
   ## Null-terminated Unicode string of the firmware vendor name that is the default name filled into the EFI System Table.
   # @Prompt Firmware vendor.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"EDK II"|VOID*|0x00010050
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"AMI"|VOID*|0x00010050
 
   ## Firmware revision that is the default revision filled into the EFI System Table.
   # @Prompt Firmware revision.
@@ -2106,15 +2106,15 @@
 
   ## Default OEM ID for ACPI table creation, its length must be 0x6 bytes to follow ACPI specification.
   # @Prompt Default OEM ID for ACPI table creation.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId|"INTEL "|VOID*|0x30001034
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId|"ALASKA"|VOID*|0x30001034
 
-  ## Default OEM Table ID for ACPI table creation, it is "EDK2    ".
+  ## Default OEM Table ID for ACPI table creation, it is "A M I ".
   #  According to ACPI specification, this field is particularly useful when
   #  defining a definition block to distinguish definition block functions.
   #  The OEM assigns each dissimilar table a new OEM Table ID.
   #  This PCD is ignored for definition block.
   # @Prompt Default OEM Table ID for ACPI table creation.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId|0x20202020324B4445|UINT64|0x30001035
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId|0x00002049204D2041|UINT64|0x30001035
 
   ## Default OEM Revision for ACPI table creation.
   #  According to ACPI specification, for LoadTable() opcode, the OS can also
@@ -2129,7 +2129,7 @@
   #  this is the ID for the ASL Compiler.
   #  This PCD is ignored for definition block.
   # @Prompt Default Creator ID for ACPI table creation.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId|0x20202020|UINT32|0x30001037
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId|0x20494D41|UINT32|0x30001037
 
   ## Default Creator Revision for ACPI table creation.
   #  According to ACPI specification, for tables containing Definition Blocks,
