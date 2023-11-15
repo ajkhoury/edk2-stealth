@@ -26,6 +26,9 @@ from UEFI.Filesystems import FatFsImage, EfiBootableIsoImage
 from UEFI.Qemu import QemuEfiMachine, QemuEfiVariant, QemuEfiFlashSize
 from UEFI import Qemu
 
+def hex_int(x):
+    return int(x, 16)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -42,6 +45,11 @@ if __name__ == '__main__':
         "-s", "--shell",
         help='Path to "Shell" EFI binary',
         required=True,
+    )
+    parser.add_argument(
+        "--mch-device-id", type=hex_int, default=0x29C0,
+        help='MCH PCI device ID for the QEMU machine',
+        required=False,
     )
     parser.add_argument(
         "-C", "--certificate",
@@ -113,6 +121,8 @@ if __name__ == '__main__':
     q = FlavorConfig[args.flavor]['QemuCommand']
     q.add_disk(iso.path)
     q.add_oem_string(11, args.certificate)
+    if args.mch_device_id != 0x29C0:
+        q.add_global_driver_prop('mch', 'x-pci-device-id', str(args.mch_device_id))
 
     child = pexpect.spawn(' '.join(q.command))
     if args.debug:
