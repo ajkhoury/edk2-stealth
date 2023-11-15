@@ -20,7 +20,10 @@
 //
 // Host Bridge Device ID (DID) value for Q35/MCH
 //
-#define INTEL_Q35_MCH_DEVICE_ID  0x29C0
+#if !defined(INTEL_Q35_MCH_DEVICE_ID)
+//#error INTEL_Q35_MCH_DEVICE_ID must be defined!
+#define INTEL_Q35_MCH_DEVICE_ID 0x29C0
+#endif
 
 //
 // B/D/F/Type: 0/0/0/PCI

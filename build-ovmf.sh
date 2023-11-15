@@ -11,10 +11,14 @@ while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 CURDIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 
+BUILD_TYPE=RELEASE
+BUILD_CONFIG=${BUILD_TYPE}_GCC
+
 $CURDIR/build.sh -a X64 \
+-n 11 \
 -t GCC \
 -p OvmfPkg/OvmfPkgX64.dsc \
--b DEBUG \
+-b $BUILD_TYPE \
 -DNETWORK_HTTP_BOOT_ENABLE=TRUE \
 -DNETWORK_IP6_ENABLE=TRUE \
 -DNETWORK_TLS_ENABLE \
@@ -25,16 +29,16 @@ $CURDIR/build.sh -a X64 \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId="ALASKA" \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId=0x00002049204D2041 \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=L"AMI" \
---pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId=0x20494D41
+--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId=0x20494D41 -DQEMU_Q35_MCH_DEVICE_ID=0x3EC2 -DQEMU_PCI_BRIDGE_VENDOR_ID=0x8086
 
-cp $CURDIR/Build/OvmfX64/DEBUG_GCC/FV/OVMF_CODE.fd $CURDIR/Build/OvmfX64/DEBUG_GCC/OVMF_CODE.secboot.fd
+cp $CURDIR/Build/OvmfX64/$BUILD_CONFIG/FV/OVMF_CODE.fd $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_CODE.secboot.fd
 
-PYTHONPATH=$CURDIR/enroll/python $CURDIR/enroll/edk2-vars-generator.py -d -f OVMF_4M \
--e $CURDIR/Build/OvmfX64/DEBUG_GCC/X64/EnrollDefaultKeys.efi \
--s $CURDIR/Build/OvmfX64/DEBUG_GCC/X64/Shell.efi \
--c $CURDIR/Build/OvmfX64/DEBUG_GCC/OVMF_CODE.secboot.fd \
--V $CURDIR/Build/OvmfX64/DEBUG_GCC/FV/OVMF_VARS.fd \
+PYTHONPATH=$CURDIR/enroll/python $CURDIR/enroll/edk2-vars-generator.py -f OVMF_4M \
+-e $CURDIR/Build/OvmfX64/$BUILD_CONFIG/X64/EnrollDefaultKeys.efi \
+-s $CURDIR/Build/OvmfX64/$BUILD_CONFIG/X64/Shell.efi \
+-c $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_CODE.secboot.fd \
+-V $CURDIR/Build/OvmfX64/$BUILD_CONFIG/FV/OVMF_VARS.fd \
 -C `< $CURDIR/enroll/oem-string-vendor` \
--o $CURDIR/Build/OvmfX64/DEBUG_GCC/OVMF_VARS.secboot.fd
+-o $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_VARS.secboot.fd --debug --mch-device-id=0x3EC2
 
 exit $?
