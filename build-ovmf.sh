@@ -29,7 +29,9 @@ $CURDIR/OvmfPkg/build.sh -a X64 \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId="ALASKA" \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId=0x00002049204D2041 \
 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=L"AMI" \
---pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId=0x20494D41
+--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId=0x20494D41 \
+-DQEMU_Q35_MCH_DEVICE_ID=0x3EC2 \
+-DQEMU_PCI_BRIDGE_VENDOR_ID=0x8086
 
 cp $CURDIR/Build/OvmfX64/$BUILD_CONFIG/FV/OVMF_CODE.fd $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_CODE.secboot.fd
 
@@ -39,6 +41,8 @@ PYTHONPATH=$CURDIR/enroll/python $CURDIR/enroll/edk2-vars-generator.py -f OVMF_4
 -c $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_CODE.secboot.fd \
 -V $CURDIR/Build/OvmfX64/$BUILD_CONFIG/FV/OVMF_VARS.fd \
 -C `< $CURDIR/enroll/oem-string-vendor` \
--o $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_VARS.secboot.fd
+-o $CURDIR/Build/OvmfX64/$BUILD_CONFIG/OVMF_VARS.secboot.fd \
+--debug \
+--mch-device-id=0x3EC2
 
 exit $?

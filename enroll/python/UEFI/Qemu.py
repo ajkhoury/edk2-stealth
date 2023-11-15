@@ -157,6 +157,12 @@ class QemuCommand:
             '-smbios', f'type={type},value={string}'
         ]
 
+    def add_global_driver_prop(self, driver, prop, value):
+        value = value.replace(",", ",,")
+        self.command = self.command + [
+            '-global', f'driver={driver},property={prop},value={value}'
+        ]
+
     class PflashParams:
         '''
         Used to generate the appropriate -pflash arguments for QEMU. Mostly
